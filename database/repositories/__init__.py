@@ -1,0 +1,5 @@
+# Import repository classes to make them available via the database.repositories namespace
+from database.repositories.user_repository import UserRepository
+from database.repositories.face_repository import FaceRepository
+from database.repositories.recommendation_repository import RecommendationRepository
+from database.repositories.analytics_repository import AnalyticsRepository

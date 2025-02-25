@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # FastAPI Service
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app/api
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=eyeglass_recommendation
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - WOOCOMMERCE_API_URL=https://lunato.shop/wp-json/wc/v3/products
+      - WOOCOMMERCE_CONSUMER_KEY=ck_818f6ea310b3712583afc0d2f12657ae78440b38
+      - WOOCOMMERCE_CONSUMER_SECRET=cs_b9e90f2f44c1f262049c7acda1933610fb182571
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - app-network
+
+  # Celery Workers
+  worker1:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    volumes:
+      - ./:/app
+    environment:
+      - WORKER_NAME=worker1
+      - WORKER_QUEUES=face_detection
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=eyeglass_recommendation
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - api
+      - redis
+      - mongo
+    networks:
+      - app-network
+
+  worker2:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    volumes:
+      - ./:/app
+    environment:
+      - WORKER_NAME=worker2
+      - WORKER_QUEUES=face_analysis
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=eyeglass_recommendation
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - api
+      - redis
+      - mongo
+    networks:
+      - app-network
+
+  worker3:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    volumes:
+      - ./:/app
+    environment:
+      - WORKER_NAME=worker3
+      - WORKER_QUEUES=frame_matching
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGO_DB_NAME=eyeglass_recommendation
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - WOOCOMMERCE_API_URL=https://lunato.shop/wp-json/wc/v3/products
+      - WOOCOMMERCE_CONSUMER_KEY=ck_818f6ea310b3712583afc0d2f12657ae78440b38
+      - WOOCOMMERCE_CONSUMER_SECRET=cs_b9e90f2f44c1f262049c7acda1933610fb182571
+    depends_on:
+      - api
+      - redis
+      - mongo
+    networks:
+      - app-network
+
+  # MongoDB Service
+  mongo:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+  # Redis for Celery
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
