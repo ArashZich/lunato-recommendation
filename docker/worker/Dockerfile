@@ -2,9 +2,10 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including CMake for dlib
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    cmake \
     libopencv-dev \
     python3-opencv \
     && apt-get clean \
